@@ -1,0 +1,15 @@
+{
+    "name": "Python Language Env",
+    // 위에서 만든 Dockerfile을 사용해 컨테이너를 빌드하도록 지정
+    "build": {
+      "dockerfile": "Dockerfile"
+    },
+    // 컨테이너가 생성된 후 VSCode에 자동으로 설치할 확장 프로그램 목록
+    "customizations": {
+      "vscode": {
+        "extensions": [
+          "ms-python.python", // 파이썬 확장 프로그램
+        ]
+      }
+    }
+  }
