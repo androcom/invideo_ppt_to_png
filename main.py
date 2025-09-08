@@ -3,15 +3,17 @@ import os
 import numpy as np
 from tqdm import tqdm
 
-def extract_ppt_frames(video_path, output_folder, threshold=0.98):
+def extract_ppt_frames(video_path, output_folder, frame_interval=30, threshold_low=0.5, threshold_high=0.98):
     """
-    MP4 영상에서 PPT 화면이 변경될 때마다 해당 프레임을 이미지로 추출합니다.
+    MP4 영상에서 일정 프레임 간격마다 화면을 비교하여 슬라이드 변경을 감지하고 추출합니다.
 
     :param video_path: 원본 동영상 파일 경로
     :param output_folder: 이미지를 저장할 폴더 경로
-    :param threshold: 프레임 유사도 임계값 (값이 높을수록 미세한 차이에도 저장)
+    :param frame_interval: 프레임을 비교할 간격 (예: 30은 30프레임마다 1번 비교)
+    :param threshold_low: 유사도 하한값
+    :param threshold_high: 유사도 상한값
     """
-    # 결과물을 저장할 폴더가 없으면 생성
+    # 폴더 생성
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
 
@@ -21,65 +23,69 @@ def extract_ppt_frames(video_path, output_folder, threshold=0.98):
         print("오류: 동영상을 열 수 없습니다.")
         return
 
-    # 동영상의 총 프레임 수 확인
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     print(f"총 프레임 수: {total_frames}")
 
-    # 이전 프레임을 저장할 변수 초기화
     prev_frame_hist = None
-    frame_count = 0
     saved_frame_count = 0
+    frame_number = 0
 
-    # tqdm을 사용하여 진행 상황 표시
     with tqdm(total=total_frames, desc="프레임 처리 중") as pbar:
         while True:
-            # 동영상에서 프레임 하나씩 읽기
             ret, frame = cap.read()
             if not ret:
-                break # 동영상이 끝나면 반복 종료
-
-            # 현재 프레임을 그레이스케일로 변환
-            gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                break
             
-            # 히스토그램 계산 (프레임의 픽셀 밝기 분포)
+            frame_number += 1
+            pbar.update(1)
+
+            # --- 핵심 변경 부분 ---
+            # 설정된 간격(frame_interval)에 해당하는 프레임이 아니면 비교를 건너뜀
+            if frame_number % frame_interval != 0:
+                continue
+
+            # --- 아래는 간격에 맞는 프레임일 때만 실행되는 로직 ---
+            gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             current_frame_hist = cv2.calcHist([gray_frame], [0], None, [256], [0, 256])
             cv2.normalize(current_frame_hist, current_frame_hist, 0, 1, cv2.NORM_MINMAX)
 
             if prev_frame_hist is not None:
-                # 이전 프레임의 히스토그램과 현재 프레임의 히스토그램 유사도 비교
                 similarity = cv2.compareHist(prev_frame_hist, current_frame_hist, cv2.HISTCMP_CORREL)
 
-                # 유사도가 설정한 임계값보다 낮으면 (즉, 화면 변화가 크면)
-                if similarity < threshold:
+                if threshold_low < similarity < threshold_high:
                     saved_frame_count += 1
-                    # 파일명 형식: slide_001.png, slide_002.png ...
                     output_filename = os.path.join(output_folder, f"slide_{saved_frame_count:03d}.png")
                     cv2.imwrite(output_filename, frame)
-                    print(f"\n화면 전환 감지! {output_filename} 저장됨 (유사도: {similarity:.4f})")
+                    print(f"\n[{frame_number} 프레임] 화면 전환 감지! {output_filename} 저장됨 (유사도: {similarity:.4f})")
 
-            # 현재 프레임의 히스토그램을 이전 프레임으로 저장
+            # 현재 비교한 프레임의 히스토그램을 '이전 히스토그램'으로 저장
             prev_frame_hist = current_frame_hist
-            pbar.update(1) # 진행 막대 업데이트
-
-    # 작업 완료 후 리소스 해제
+            
     cap.release()
     print(f"\n총 {saved_frame_count}개의 슬라이드 이미지를 추출했습니다.")
 
 
 # --- 여기부터 설정 부분 ---
 
-# 1. 동영상 파일 경로를 지정하세요.
-# 예: "C:/Users/YourUser/Desktop/lecture.mp4"
 VIDEO_FILE_PATH = "C:/test.mp4" 
-
-# 2. 추출된 이미지를 저장할 폴더 이름을 지정하세요.
 OUTPUT_FOLDER_NAME = "extracted_slides"
 
-# 3. 임계값 설정 (옵션)
-# 0.9 ~ 0.99 사이의 값을 권장합니다.
-# 값이 낮을수록: 사소한 변화(마우스 커서 움직임 등)에도 프레임을 저장할 수 있음
-# 값이 높을수록: 정말 화면이 크게 바뀌었을 때만 저장함
-THRESHOLD_VALUE = 0.98
+# ✨ 1. 프레임 비교 간격 설정
+# 30fps 동영상 기준, 30으로 설정 시 약 1초에 1번 비교합니다.
+# 15로 설정 시 약 0.5초에 1번 비교합니다.
+FRAME_INTERVAL = 60
+
+# 2. 유사도 상한값
+THRESHOLD_HIGH_VALUE = 0.999
+
+# 3. 유사도 하한값
+THRESHOLD_LOW_VALUE = 0.6
 
 # 함수 실행
-extract_ppt_frames(VIDEO_FILE_PATH, OUTPUT_FOLDER_NAME, THRESHOLD_VALUE)
+extract_ppt_frames(
+    VIDEO_FILE_PATH,
+    OUTPUT_FOLDER_NAME,
+    frame_interval=FRAME_INTERVAL,
+    threshold_low=THRESHOLD_LOW_VALUE,
+    threshold_high=THRESHOLD_HIGH_VALUE
+)
