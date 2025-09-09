@@ -2,14 +2,38 @@ import cv2
 import os
 import numpy as np
 from tqdm import tqdm
+import logging
 
 def extract_ppt_frames(video_path, output_folder, frame_interval=30, threshold_low=0.5, threshold_high=0.98):
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
+        
+    # ✨ --- 1. 로거(Logger) 설정 --- ✨
+    # 각 비디오 파일 이름에 맞는 로그 파일 생성 (예: my_video.log)
+    video_name_without_ext = os.path.splitext(os.path.basename(video_path))[0]
+    log_file_path = os.path.join(output_folder, f"{video_name_without_ext}.log")
+    
+    # 로거 인스턴스 생성 및 설정
+    logger = logging.getLogger(video_name_without_ext)
+    logger.setLevel(logging.INFO)
+
+    # 이전 실행에서 핸들러가 추가되었다면 초기화
+    if logger.hasHandlers():
+        logger.handlers.clear()
+
+    # 파일 핸들러 설정 (파일을 새로 덮어쓰는 'w' 모드)
+    file_handler = logging.FileHandler(log_file_path, mode='w', encoding='utf-8')
+    formatter = logging.Formatter('%(message)s') # 로그 메시지 형식 지정
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
+    # ✨ --- 로거 설정 끝 --- ✨
 
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
-        print(f"오류: 동영상 파일을 열 수 없습니다 - {video_path}")
+        # 오류는 콘솔과 로그에 모두 남김
+        error_msg = f"오류: 동영상 파일을 열 수 없습니다 - {video_path}"
+        print(error_msg)
+        logger.error(error_msg)
         return
 
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
@@ -38,27 +62,34 @@ def extract_ppt_frames(video_path, output_folder, frame_interval=30, threshold_l
         if prev_frame_hist is not None:
             similarity = cv2.compareHist(prev_frame_hist, current_frame_hist, cv2.HISTCMP_CORREL)
 
+            msec = cap.get(cv2.CAP_PROP_POS_MSEC)
+            hours = int(msec / (1000 * 60 * 60))
+            minutes = int((msec / (1000 * 60)) % 60)
+            seconds = int((msec / 1000) % 60)
+            timestamp_str = f"{hours:02d}h {minutes:02d}m {seconds:02d}s"
+            
+            log_message = f"[{timestamp_str}] 유사도: {similarity:.6f}"
+
             if threshold_low < similarity < threshold_high:
                 saved_frame_count += 1
-                # 현재 프레임의 영상 내 시간(밀리초)을 가져옵니다.
-                msec = cap.get(cv2.CAP_PROP_POS_MSEC)
-                
-                # 밀리초를 시, 분, 초 단위로 변환합니다.
-                hours = int(msec / (1000 * 60 * 60))
-                minutes = int((msec / (1000 * 60)) % 60)
-                seconds = int((msec / 1000) % 60)
-                
-                # '시-분-초.png' 형식의 파일명을 생성합니다.
-                timestamp_str = f"{hours:02d}h-{minutes:02d}m-{seconds:02d}s"
-                output_filename = os.path.join(output_folder, f"{saved_frame_count:03d}_{timestamp_str}.png")
-                
+                filename_ts_part = f"{hours:02d}h-{minutes:02d}m-{seconds:02d}s"
+                output_filename = os.path.join(output_folder, f"{saved_frame_count:03d}_{filename_ts_part}.png")
                 cv2.imwrite(output_filename, frame)
+                
+                # ✨ --- 2. print를 logger.info로 변경 --- ✨
+                logger.info(f"{log_message} -> [저장 O] ({saved_frame_count:03d}_{filename_ts_part}.png)")
+            else:
+                logger.info(f"{log_message} -> [저장 X]")
 
         prev_frame_hist = current_frame_hist
             
     pbar.close()
     cap.release()
-    print(f"✅ 완료: '{video_filename}' 처리 완료. 총 {saved_frame_count}개의 슬라이드 추출.")
+    
+    # 최종 완료 메시지는 콘솔에 출력
+    final_message = f"✅ 완료: '{video_filename}' 처리 완료. 총 {saved_frame_count}개의 슬라이드 추출."
+    print(final_message)
+    logger.info(f"\n--- 최종 결과 ---\n{final_message}")
 
 
 # ✨ 1. 영상들이 모여있는 폴더 경로를 지정하세요.
@@ -71,9 +102,9 @@ MASTER_OUTPUT_FOLDER = "extracted_slides"
 VIDEO_EXTENSIONS = ('.mp4', '.mov', '.avi', '.mkv')
 
 # (아래는 처리 옵션 - 필요시 수정)
-FRAME_INTERVAL = 60
+FRAME_INTERVAL = 30
 THRESHOLD_HIGH_VALUE = 0.999
-THRESHOLD_LOW_VALUE = 0.5
+THRESHOLD_LOW_VALUE = 0.6
 
 # --- ✨ 메인 실행 로직 ---
 if __name__ == "__main__":
