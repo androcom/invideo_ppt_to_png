@@ -4,88 +4,105 @@ import numpy as np
 from tqdm import tqdm
 
 def extract_ppt_frames(video_path, output_folder, frame_interval=30, threshold_low=0.5, threshold_high=0.98):
-    """
-    MP4 영상에서 일정 프레임 간격마다 화면을 비교하여 슬라이드 변경을 감지하고 추출합니다.
 
-    :param video_path: 원본 동영상 파일 경로
-    :param output_folder: 이미지를 저장할 폴더 경로
-    :param frame_interval: 프레임을 비교할 간격 (예: 30은 30프레임마다 1번 비교)
-    :param threshold_low: 유사도 하한값
-    :param threshold_high: 유사도 상한값
-    """
-    # 폴더 생성
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
 
-    # 동영상 파일 열기
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
-        print("오류: 동영상을 열 수 없습니다.")
+        print(f"오류: 동영상 파일을 열 수 없습니다 - {video_path}")
         return
 
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    print(f"총 프레임 수: {total_frames}")
+    
+    # tqdm 설명에 현재 처리 중인 파일 이름 추가
+    video_filename = os.path.basename(video_path)
+    pbar = tqdm(total=total_frames, desc=f"처리 중: {video_filename}")
 
     prev_frame_hist = None
     saved_frame_count = 0
     frame_number = 0
 
-    with tqdm(total=total_frames, desc="프레임 처리 중") as pbar:
-        while True:
-            ret, frame = cap.read()
-            if not ret:
-                break
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
+        
+        frame_number += 1
+        pbar.update(1)
+
+        if frame_number % frame_interval != 0:
+            continue
+
+        gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        current_frame_hist = cv2.calcHist([gray_frame], [0], None, [256], [0, 256])
+        cv2.normalize(current_frame_hist, current_frame_hist, 0, 1, cv2.NORM_MINMAX)
+
+        if prev_frame_hist is not None:
+            similarity = cv2.compareHist(prev_frame_hist, current_frame_hist, cv2.HISTCMP_CORREL)
+
+            if threshold_low < similarity < threshold_high:
+                saved_frame_count += 1
+                output_filename = os.path.join(output_folder, f"slide_{saved_frame_count:03d}.png")
+                cv2.imwrite(output_filename, frame)
+
+        prev_frame_hist = current_frame_hist
             
-            frame_number += 1
-            pbar.update(1)
-
-            # --- 핵심 변경 부분 ---
-            # 설정된 간격(frame_interval)에 해당하는 프레임이 아니면 비교를 건너뜀
-            if frame_number % frame_interval != 0:
-                continue
-
-            # --- 아래는 간격에 맞는 프레임일 때만 실행되는 로직 ---
-            gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            current_frame_hist = cv2.calcHist([gray_frame], [0], None, [256], [0, 256])
-            cv2.normalize(current_frame_hist, current_frame_hist, 0, 1, cv2.NORM_MINMAX)
-
-            if prev_frame_hist is not None:
-                similarity = cv2.compareHist(prev_frame_hist, current_frame_hist, cv2.HISTCMP_CORREL)
-
-                if threshold_low < similarity < threshold_high:
-                    saved_frame_count += 1
-                    output_filename = os.path.join(output_folder, f"slide_{saved_frame_count:03d}.png")
-                    cv2.imwrite(output_filename, frame)
-                    print(f"\n[{frame_number} 프레임] 화면 전환 감지! {output_filename} 저장됨 (유사도: {similarity:.4f})")
-
-            # 현재 비교한 프레임의 히스토그램을 '이전 히스토그램'으로 저장
-            prev_frame_hist = current_frame_hist
-            
+    pbar.close()
     cap.release()
-    print(f"\n총 {saved_frame_count}개의 슬라이드 이미지를 추출했습니다.")
+    print(f"✅ 완료: '{video_filename}' 처리 완료. 총 {saved_frame_count}개의 슬라이드 추출.")
 
 
-# --- 여기부터 설정 부분 ---
+# ✨ 1. 영상들이 모여있는 폴더 경로를 지정하세요.
+INPUT_FOLDER_PATH = "INPUT"
 
-VIDEO_FILE_PATH = "test.mp4" 
-OUTPUT_FOLDER_NAME = "extracted_slides"
+# ✨ 2. 모든 결과물을 저장할 최상위 폴더 이름을 지정하세요.
+MASTER_OUTPUT_FOLDER = "extracted_slides"
 
-# ✨ 1. 프레임 비교 간격 설정
-# 30fps 동영상 기준, 30으로 설정 시 약 1초에 1번 비교합니다.
-# 15로 설정 시 약 0.5초에 1번 비교합니다.
+# ✨ 3. 처리할 영상 파일의 확장자를 지정하세요. (소문자로)
+VIDEO_EXTENSIONS = ('.mp4', '.mov', '.avi', '.mkv')
+
+# (아래는 처리 옵션 - 필요시 수정)
 FRAME_INTERVAL = 60
-
-# 2. 유사도 상한값
 THRESHOLD_HIGH_VALUE = 0.999
+THRESHOLD_LOW_VALUE = 0.5
 
-# 3. 유사도 하한값
-THRESHOLD_LOW_VALUE = 0.6
+# --- ✨ 메인 실행 로직 ---
+if __name__ == "__main__":
+    if not os.path.isdir(INPUT_FOLDER_PATH):
+        print(f"오류: 지정된 폴더를 찾을 수 없습니다 - {INPUT_FOLDER_PATH}")
+    else:
+        print(f"'{INPUT_FOLDER_PATH}' 폴더에서 영상 파일을 검색합니다...")
+        
+        # 지정된 폴더 내의 모든 파일 목록을 가져옴
+        all_files = os.listdir(INPUT_FOLDER_PATH)
+        
+        # 확장자를 기준으로 영상 파일만 필터링
+        video_files = [f for f in all_files if f.lower().endswith(VIDEO_EXTENSIONS)]
 
-# 함수 실행
-extract_ppt_frames(
-    VIDEO_FILE_PATH,
-    OUTPUT_FOLDER_NAME,
-    frame_interval=FRAME_INTERVAL,
-    threshold_low=THRESHOLD_LOW_VALUE,
-    threshold_high=THRESHOLD_HIGH_VALUE
-)
+        if not video_files:
+            print("처리할 영상 파일을 찾지 못했습니다.")
+        else:
+            print(f"총 {len(video_files)}개의 영상 파일을 처리합니다: {video_files}")
+            
+            # 영상 파일을 하나씩 순회하며 처리
+            for video_file in video_files:
+                # 전체 영상 파일 경로 생성
+                full_video_path = os.path.join(INPUT_FOLDER_PATH, video_file)
+                
+                # 결과물을 저장할 하위 폴더 이름 생성 (예: 'lecture1_slides')
+                video_name_without_ext = os.path.splitext(video_file)[0]
+                output_subfolder_path = os.path.join(MASTER_OUTPUT_FOLDER, f"{video_name_without_ext}_slides")
+                
+                print(f"\n--- [{video_file}] 처리 시작 ---")
+                
+                # 메인 함수 호출
+                extract_ppt_frames(
+                    full_video_path,
+                    output_subfolder_path,
+                    frame_interval=FRAME_INTERVAL,
+                    threshold_low=THRESHOLD_LOW_VALUE,
+                    threshold_high=THRESHOLD_HIGH_VALUE
+                )
+            
+            print("\n🎉 모든 작업이 완료되었습니다!")
