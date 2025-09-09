@@ -83,7 +83,7 @@ def extract_ppt_frames(video_path, output_folder, config):
                 filename_ts_part = f"{hours:02d}h-{minutes:02d}m-{seconds:02d}s"
                 output_filename = os.path.join(output_folder, f"{saved_frame_count:03d}_{filename_ts_part}.png")
                 cv2.imwrite(output_filename, frame)
-                logger.info(f"{full_log_message} -> [저장 O] ({saved_frame_count}번째)")
+                logger.info(f"{full_log_message} -> [저장 O] ({saved_frame_count:03d}_{filename_ts_part}.png)")
             else:
                 logger.info(f"{full_log_message} -> [저장 X]")
 
