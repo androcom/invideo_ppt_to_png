@@ -67,7 +67,7 @@ def extract_ppt_frames(video_path, output_folder, frame_interval=30, threshold_l
 
 # --- 여기부터 설정 부분 ---
 
-VIDEO_FILE_PATH = "C:/test.mp4" 
+VIDEO_FILE_PATH = "test.mp4" 
 OUTPUT_FOLDER_NAME = "extracted_slides"
 
 # ✨ 1. 프레임 비교 간격 설정
