@@ -1,0 +1,25 @@
+# config.yaml
+
+# --- 기본 설정 ---
+# 영상 폴더 경로
+input_folder_path: "INPUT"
+# 저장 최상위 폴더 경로
+master_output_folder: "EXTRACTED_SLIDES"
+# 영상 파일 확장자 (리스트 형식)
+video_extensions:
+  - .mp4
+  - .mov
+  - .avi
+  - .mkv
+
+# --- 처리 옵션 ---
+# 프레임 비교 간격
+frame_interval: 30
+# 사용할 비교 방식: 'METHOD_PIXEL_DIFF' 또는 'METHOD_SSIM'
+comparison_method: 'METHOD_PIXEL_DIFF'
+
+# --- 각 방식별 임계값 ---
+# 픽셀 차이 임계값 (변경된 픽셀의 비율, 0.01 = 1%)
+pixel_diff_threshold: 0.01
+# SSIM 임계값 (구조적 유사도, 1.0에 가까울수록 유사)
+ssim_threshold: 0.98
