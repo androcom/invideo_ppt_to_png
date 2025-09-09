@@ -4,7 +4,6 @@ import numpy as np
 from tqdm import tqdm
 
 def extract_ppt_frames(video_path, output_folder, frame_interval=30, threshold_low=0.5, threshold_high=0.98):
-
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
 
@@ -14,8 +13,6 @@ def extract_ppt_frames(video_path, output_folder, frame_interval=30, threshold_l
         return
 
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    
-    # tqdm 설명에 현재 처리 중인 파일 이름 추가
     video_filename = os.path.basename(video_path)
     pbar = tqdm(total=total_frames, desc=f"처리 중: {video_filename}")
 
@@ -43,7 +40,18 @@ def extract_ppt_frames(video_path, output_folder, frame_interval=30, threshold_l
 
             if threshold_low < similarity < threshold_high:
                 saved_frame_count += 1
-                output_filename = os.path.join(output_folder, f"slide_{saved_frame_count:03d}.png")
+                # 현재 프레임의 영상 내 시간(밀리초)을 가져옵니다.
+                msec = cap.get(cv2.CAP_PROP_POS_MSEC)
+                
+                # 밀리초를 시, 분, 초 단위로 변환합니다.
+                hours = int(msec / (1000 * 60 * 60))
+                minutes = int((msec / (1000 * 60)) % 60)
+                seconds = int((msec / 1000) % 60)
+                
+                # '시-분-초.png' 형식의 파일명을 생성합니다.
+                timestamp_str = f"{hours:02d}h-{minutes:02d}m-{seconds:02d}s"
+                output_filename = os.path.join(output_folder, f"{saved_frame_count:03d}_{timestamp_str}.png")
+                
                 cv2.imwrite(output_filename, frame)
 
         prev_frame_hist = current_frame_hist
