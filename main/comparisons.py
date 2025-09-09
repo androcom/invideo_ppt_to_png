@@ -12,12 +12,12 @@ def compare_pixel_diff(frame1_gray, frame2_gray, threshold):
     score = non_zero_count / total_pixels
     
     change_detected = score > threshold
-    log_message = f"PIXEL DIFF: {score:.6f}"
+    log_message = f"변경된 픽셀 비율: {score:.6f}"
     
     return change_detected, log_message
 
-def compare_ssim_diff(frame1_gray, frame2_gray, threshold):
-    """구조적 유사성(SSIM)의 차이를 계산하여 변화 여부를 반환합니다."""
+def compare_ssim(frame1_gray, frame2_gray, threshold):
+    """구조적 유사성(SSIM)을 계산하여 변화 여부를 반환합니다."""
     h, w = frame1_gray.shape
     win_size = min(7, h, w)
     if win_size % 2 == 0:
@@ -26,6 +26,6 @@ def compare_ssim_diff(frame1_gray, frame2_gray, threshold):
     score = ssim(frame1_gray, frame2_gray, win_size=win_size)
     
     change_detected = score < threshold
-    log_message = f"SSIM DIFF: {score:.6f}"
+    log_message = f"유사도: {score:.6f}"
     
     return change_detected, log_message

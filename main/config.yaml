@@ -15,11 +15,11 @@ video_extensions:
 # --- 처리 옵션 ---
 # 프레임 비교 간격
 frame_interval: 30
-# 사용할 비교 방식: 'METHOD_PIXEL_DIFF' 또는 'METHOD_SSIM_DIFF'
-comparison_method: 'METHOD_SSIM_DIFF'
+# 사용할 비교 방식: 'METHOD_PIXEL_DIFF' 또는 'METHOD_SSIM'
+comparison_method: 'METHOD_PIXEL_DIFF'
 
 # --- 각 방식별 임계값 ---
-# 픽셀 차이 임계값 (변경된 픽셀의 비율)
+# 픽셀 차이 임계값 (변경된 픽셀의 비율, 0.01 = 1%)
 pixel_diff_threshold: 0.01
-# SSIM 차이 임계값 (구조적 유사도 차이의 비율)
-ssim_diff_threshold: 0.02
+# SSIM 임계값 (구조적 유사도, 1.0에 가까울수록 유사)
+ssim_threshold: 0.98
