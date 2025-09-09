@@ -7,6 +7,9 @@
     // 컨테이너가 생성된 후 VSCode에 자동으로 설치할 확장 프로그램 목록
     "customizations": {
       "vscode": {
+        "settings": {
+          "python.defaultInterpreterPath": "/usr/bin/python3" // 파이썬 인터프리터 경로 설정
+        },
         "extensions": [
           "ms-python.python" // 파이썬 확장 프로그램
         ]
