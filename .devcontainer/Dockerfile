@@ -7,9 +7,11 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y \
     git \
     curl \
-    # Python 3 및 패키지 관리자 pip
+    build-essential \
+    gdb \
     python3 \
-    python3-pip
+    python3-pip \
+    libgl1-mesa-glx
 
 # 3. 파이썬 라이브러리를 설치합니다.
 RUN pip3 install numpy opencv-python tqdm
