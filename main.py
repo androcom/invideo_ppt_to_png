@@ -9,7 +9,6 @@ from skimage.metrics import structural_similarity as ssim
 # 사용할 비교 방식을 아래 셋 중 하나로 선택하세요.
 # 'METHOD_PIXEL_DIFF': 픽셀 차이 계산 (텍스트 변화 감지에 가장 효과적, 강력 추천!)
 # 'METHOD_SSIM': 구조적 유사성 비교
-# 'METHOD_ORB': 특징점 매칭 비교
 COMPARISON_METHOD = ''
 
 def extract_ppt_frames(video_path, output_folder, frame_interval=30):
@@ -46,13 +45,6 @@ def extract_ppt_frames(video_path, output_folder, frame_interval=30):
     prev_gray_frame = None
     saved_frame_count = 0
     frame_number = 0
-    
-    # ORB 방식에 사용할 객체 및 이전 매칭 수 저장 변수
-    if COMPARISON_METHOD == 'METHOD_ORB':
-        orb = cv2.ORB_create(nfeatures=1000)
-        bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
-        # 안정적인 상태의 평균 매칭 수를 저장할 변수
-        stable_match_count = -1
 
     # 메인 루프
     while True:
@@ -100,35 +92,6 @@ def extract_ppt_frames(video_path, output_folder, frame_interval=30):
                 if score < SSIM_THRESHOLD:
                     change_detected = True
                 log_message = f"유사도: {score:.6f}"
-
-            # --- 3. ORB 특징점 매칭 로직 ---
-            elif COMPARISON_METHOD == 'METHOD_ORB':
-                # 임계값: 안정 상태 대비 매칭 수가 몇 % 이하로 떨어졌을 때 변화로 볼 것인가
-                # (예: 0.5 = 50% 이하)
-                ORB_DROP_RATIO_THRESHOLD = 0.5 
-                
-                kp1, des1 = orb.detectAndCompute(prev_gray_frame, None)
-                kp2, des2 = orb.detectAndCompute(gray_frame, None)
-
-                score = 0
-                if des1 is not None and des2 is not None and len(des1) > 0 and len(des2) > 0:
-                    matches = bf.match(des1, des2)
-                    score = len(matches)
-
-                # 안정 상태 매칭 수(stable_match_count)를 기준으로 변화 감지
-                if stable_match_count == -1: # 아직 안정값이 없으면 현재 값을 기준으로 설정
-                    if score > 500: # 초기 노이즈를 피하기 위해 일정 값 이상일 때만 안정값으로 인정
-                         stable_match_count = score
-                # 안정값이 있고, 현재 매칭 수가 안정값의 N% 이하로 떨어졌다면 변화로 감지
-                elif score < stable_match_count * ORB_DROP_RATIO_THRESHOLD:
-                    change_detected = True
-                    # 변화 감지 후, 현재 값을 새로운 안정 상태 기준으로 업데이트
-                    stable_match_count = score
-                # 변화가 없다면, 안정 상태 매칭 수를 현재 값에 가깝게 점진적으로 업데이트 (평균 필터링 효과)
-                else:
-                    stable_match_count = (stable_match_count * 0.9) + (score * 0.1)
-
-                log_message = f"매칭 수: {int(score)} (기준: {int(stable_match_count)})"
 
             # --- 로깅 및 저장 처리 ---
             msec = cap.get(cv2.CAP_PROP_POS_MSEC)
