@@ -64,9 +64,9 @@ def extract_ppt_frames(video_path, output_folder, config):
                 change_detected, log_message = comparisons.compare_pixel_diff(
                     prev_gray_frame, gray_frame, config['pixel_diff_threshold']
                 )
-            elif config['comparison_method'] == 'METHOD_SSIM':
-                change_detected, log_message = comparisons.compare_ssim(
-                    prev_gray_frame, gray_frame, config['ssim_threshold']
+            elif config['comparison_method'] == 'METHOD_SSIM_DIFF':
+                change_detected, log_message = comparisons.compare_ssim_diff(
+                    prev_gray_frame, gray_frame, config['ssim_diff_threshold']
                 )
 
             # --- 로깅 및 저장 처리 ---
