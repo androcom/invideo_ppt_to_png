@@ -28,6 +28,10 @@ def compare_pixel_diff(frame1_gray, frame2_gray, threshold):
 
 def compare_ssim_diff(frame1_gray, frame2_gray, threshold):
     """구조적 유사성(SSIM)의 차이를 계산하여 변화 여부를 반환합니다."""
+
+    # SSIM: 구조적 유사성 지수 측정
+    # https://en.wikipedia.org/wiki/Structural_similarity_index_measure
+    # SSIM이 1에 가까울수록 두 이미지 유사
     score = 1 - ssim(frame1_gray, frame2_gray)
     
     change_detected = score > threshold
