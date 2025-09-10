@@ -28,12 +28,7 @@ def compare_pixel_diff(frame1_gray, frame2_gray, threshold):
 
 def compare_ssim_diff(frame1_gray, frame2_gray, threshold):
     """구조적 유사성(SSIM)의 차이를 계산하여 변화 여부를 반환합니다."""
-    h, w = frame1_gray.shape
-    win_size = min(7, h, w)
-    if win_size % 2 == 0:
-        win_size -= 1
-    
-    score = 1 - ssim(frame1_gray, frame2_gray, win_size=win_size)
+    score = 1 - ssim(frame1_gray, frame2_gray)
     
     change_detected = score > threshold
     log_message = f"SSIM_DIFF: {score:.6f}"
