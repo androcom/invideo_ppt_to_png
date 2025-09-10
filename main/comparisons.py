@@ -5,14 +5,15 @@ from skimage.metrics import structural_similarity as ssim
 
 def compare_pixel_diff(frame1_gray, frame2_gray, threshold):
     """픽셀 차이를 계산하여 변화 여부를 반환합니다."""
-    diff = cv2.absdiff(frame1_gray, frame2_gray)
-    _, thresholded_diff = cv2.threshold(diff, 25, 255, cv2.THRESH_BINARY)
-    non_zero_count = cv2.countNonZero(thresholded_diff)
+    diff = cv2.absdiff(frame1_gray, frame2_gray) 
+    otsu_threshold, thresholded_diff = cv2.threshold(diff, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    non_zero_count = cv2.countNonZero(thresholded_diff) 
     total_pixels = frame1_gray.shape[0] * frame1_gray.shape[1]
     score = non_zero_count / total_pixels
     
     change_detected = score > threshold
     log_message = f"PIXEL_DIFF: {score:.6f}"
+    log_message = f"PIXEL_DIFF: {score:.6f} / otsu: {otsu_threshold:.6f}"
     
     return change_detected, log_message
 
