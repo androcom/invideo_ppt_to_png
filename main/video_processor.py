@@ -28,9 +28,21 @@ def extract_ppt_frames(video_path, output_folder, config):
     # --- 동영상 처리 시작 ---
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
-        error_msg = f"오류: 동영상 파일을 열 수 없습니다 - {video_path}"
+        error_msg = f"오류: 동영상 파일을 열 수 없습니다. - {video_path}"
         print(error_msg)
         logger.error(error_msg)
+        return
+    
+    # --- 해상도 확인 ---
+    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+    # SSIM 계산에 필요한 최소 크기보다 작은 경우 오류 처리
+    if width <= 7 or height <= 7:
+        error_msg = f"오류: 영상 해상도({width}x{height})가 너무 낮아 처리가 불가능합니다. - {video_path}"
+        print(error_msg)
+        logger.error(error_msg)
+        cap.release()
         return
 
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
