@@ -54,6 +54,7 @@ def extract_ppt_frames(video_path, output_folder, config):
         if frame_number % config['frame_interval'] != 0:
             continue
 
+        # 연산 속도 향상을 위해 그레이스케일로 변환
         gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
         if prev_gray_frame is not None:
