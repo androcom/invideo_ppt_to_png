@@ -3,6 +3,7 @@
 import os
 import yaml
 from video_processor import extract_ppt_frames
+from post_processor import group_similar_images_in_folder
 
 def load_config(config_path='config.yaml'):
     """YAML 설정 파일을 읽어 딕셔너리로 반환합니다."""
@@ -50,8 +51,10 @@ def run_process():
         
         print(f"\n--- [{video_file}] 처리 시작 ---")
         
-        # 핵심 기능 호출 시, 읽어온 config 객체를 전달
+        # 영상에서 슬라이드 추출
         extract_ppt_frames(full_video_path, output_subfolder_path, config)
+        # 추출된 슬라이드 그룹화
+        group_similar_images_in_folder(output_subfolder_path)
     
     print("\n🎉 모든 작업이 완료되었습니다!")
 
