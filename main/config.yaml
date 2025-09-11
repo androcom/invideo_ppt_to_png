@@ -13,8 +13,8 @@ video_extensions:
   - .mkv
 
 # --- 처리 옵션 ---
-# 프레임 비교 간격
-frame_interval: 30
+# 프레임 비교 간격 (초)
+frame_interval_sec: 1
 # 사용할 비교 방식: 'METHOD_PIXEL_DIFF' 또는 'METHOD_SSIM_DIFF'
 comparison_method: 'METHOD_SSIM_DIFF'
 

@@ -45,6 +45,22 @@ def extract_ppt_frames(video_path, output_folder, config):
         cap.release()
         return
 
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    # FPS 정보를 읽지 못하는 경우 기본값 30으로 설정
+    if fps == 0:
+        logger.warning("경고: 영상의 FPS 정보를 읽을 수 없어 기본값(30)을 사용합니다.")
+        fps = 30
+    
+    interval_in_seconds = config['frame_interval_sec']
+    # '초' 단위 간격을 실제 프레임 수 간격으로 변환
+    frame_check_interval = int(round(interval_in_seconds * fps))
+    # 계산된 간격이 최소 1 이상이 되도록 보정
+    if frame_check_interval < 1:
+        frame_check_interval = 1
+    
+    logger.info(f"영상 정보: {width}x{height}, {fps:.2f} FPS")
+    logger.info(f"설정된 간격: {interval_in_seconds}초 -> 적용 간격: {frame_check_interval}FPS")
+
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     video_filename = os.path.basename(video_path)
     pbar = tqdm(total=total_frames, desc=f"처리 중: {video_filename}")
@@ -62,10 +78,9 @@ def extract_ppt_frames(video_path, output_folder, config):
         frame_number += 1
         pbar.update(1)
 
-        # YAML에서 읽어온 설정값 사용
-        if frame_number % config['frame_interval'] != 0:
+        if frame_number % frame_check_interval != 0:
             continue
-
+        
         # 연산 속도 향상을 위해 그레이스케일로 변환
         gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
