@@ -88,14 +88,27 @@ def extract_ppt_frames(video_path, output_folder, config):
             change_detected = False
             log_message = ""
 
-            if config['comparison_method'] == 'METHOD_PIXEL_DIFF':
-                change_detected, log_message = comparisons.compare_pixel_diff(
-                    prev_gray_frame, gray_frame, config['pixel_diff_threshold']
-                )
-            elif config['comparison_method'] == 'METHOD_SSIM_DIFF':
-                change_detected, log_message = comparisons.compare_ssim_diff(
+            # PIXEL_DIFF 1차 비교
+            pixel_change_detected, pixel_log = comparisons.compare_pixel_diff(
+                prev_gray_frame, gray_frame, config['pixel_diff_threshold']
+            )
+            
+            if pixel_change_detected:
+                change_detected = True
+                log_message = pixel_log
+                
+            else:
+                # SSIM_DIFF 2차 비교
+                ssim_change_detected, ssim_log = comparisons.compare_ssim_diff(
                     prev_gray_frame, gray_frame, config['ssim_diff_threshold']
                 )
+                
+                if ssim_change_detected:
+                    change_detected = True
+                    log_message = f"{pixel_log} -> {ssim_log}"
+                else:
+                    change_detected = False
+                    log_message = f"{pixel_log} -> {ssim_log}"
 
             # --- 로깅 및 저장 처리 ---
             msec = cap.get(cv2.CAP_PROP_POS_MSEC)
