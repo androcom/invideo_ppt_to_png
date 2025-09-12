@@ -1,6 +1,6 @@
-numpy==2.2.6                # opencv, scikit에서 numpy array 사용
-opencv-python==4.12.0.88    # 동영상 / 이미지 처리, pixel_diff
-scikit-image==0.25.2        # ssim_diff
-scikit-learn==1.7.2         # DBSCAN 클러스터링
-PyYAML==6.0.2               # yaml 파일 처리
-tqdm==4.67.1                # 반복문 진행상황 시각화
+numpy==2.2.6
+opencv-python==4.12.0.88
+scikit-image==0.25.2
+scikit-learn==1.7.2
+PyYAML==6.0.2
+tqdm==4.67.1
