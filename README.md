@@ -79,5 +79,5 @@ ssim_diff_threshold: 0.01
 ├── comparisons.py            # 이미지 비교 알고리즘 (Pixel Diff, SSIM)
 ├── config.yaml               # 설정 파일
 ├── requirements.txt          # 필요 라이브러리 목록
-└── #run.bat                   # 윈도우용 간편 실행 파일
+└── #run.bat                  # 윈도우용 간편 실행 파일
 ```
