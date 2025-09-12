@@ -9,7 +9,8 @@ from tqdm import tqdm
 
 def get_image_histogram(image_path):
     """이미지 파일 경로를 받아 정규화된 히스토그램을 반환합니다."""
-    image = cv2.imread(image_path)
+    img_array = np.fromfile(image_path, np.uint8)
+    image = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
     if image is None:
         return None
     gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)

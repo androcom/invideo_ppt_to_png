@@ -5,6 +5,7 @@ import os
 from tqdm import tqdm
 import logging
 import comparisons
+import numpy as np
 
 def extract_ppt_frames(video_path, output_folder, config):
     # --- 로거 설정 ---
@@ -123,7 +124,14 @@ def extract_ppt_frames(video_path, output_folder, config):
                 saved_frame_count += 1
                 filename_ts_part = f"{hours:02d}h-{minutes:02d}m-{seconds:02d}s"
                 output_filename = os.path.join(output_folder, f"{saved_frame_count:03d}_{filename_ts_part}.png")
-                cv2.imwrite(output_filename, frame)
+                
+                extension = os.path.splitext(output_filename)[1]
+                result, encoded_img = cv2.imencode(extension, frame)
+
+                if result:
+                    with open(output_filename, mode='w+b') as f:
+                        encoded_img.tofile(f)
+                
                 logger.info(f"{full_log_message} -> [저장 O] ({saved_frame_count:03d}_{filename_ts_part}.png)")
             else:
                 logger.info(f"{full_log_message} -> [저장 X]")
